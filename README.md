@@ -37,7 +37,6 @@ A real-time dashboard to visualize global flight demand using live OpenSky Netwo
 ![Dashboard Screenshot](![Screenshot (67)](https://github.com/user-attachments/assets/37382caf-827b-4fd7-b331-b4683660fbf1)
 )
 
-> 📝 Tip: Save a screenshot as `docs/dashboard-screenshot.png` in your repo to render it here.
 
 ---
 
