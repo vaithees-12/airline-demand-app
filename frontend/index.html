@@ -1,156 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Airline Market Demand Dashboard</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style>
-    body {
-      background: linear-gradient(to bottom, #e0f7fa, #ffffff);
-      font-family: 'Segoe UI', sans-serif;
-    }
-    h1 {
-      color: #0d6efd;
-    }
-    canvas {
-      background: #ffffff;
-      padding: 10px;
-      border-radius: 10px;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
-    }
-    #map {
-      height: 500px;
-      border-radius: 8px;
-      margin-bottom: 30px;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Airline Demand Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="container py-4">
-    <h1 class="text-center mb-4">✨ Airline Market Demand Dashboard</h1>
+  <div class="container">
+    <h1>🌍 Airline Demand Dashboard</h1>
 
-    <div class="row g-4">
-      <div class="col-md-6">
-        <canvas id="countryChart"></canvas>
-      </div>
-      <div class="col-md-6">
-        <canvas id="speedChart"></canvas>
-      </div>
-      <div class="col-md-6">
-        <canvas id="priceChart"></canvas>
-      </div>
-      <div class="col-md-6">
-        <canvas id="demandChart"></canvas>
-      </div>
+    <div class="chart-block">
+      <h2>Popular Routes</h2>
+      <canvas id="popularRoutesChart"></canvas>
     </div>
 
-    <h4 class="mt-5">🌍 Live Aircraft Map</h4>
-    <div id="map"></div>
+    <div class="chart-block">
+      <h2>Price Trends</h2>
+      <canvas id="priceTrendsChart"></canvas>
+    </div>
+
+    <div class="chart-block">
+      <h2>Top Countries by Demand</h2>
+      <canvas id="topCountriesChart"></canvas>
+    </div>
+
+    <div class="chart-block">
+      <h2>High-Demand Periods</h2>
+      <canvas id="demandPeriodsChart"></canvas>
+    </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    const BACKEND_URL = "http://127.0.0.1:5000";
+    // 1. Popular Routes
+    const popularRoutes = [
+      { count: 608, route: "United States ➔ " },
+      { count: 588, route: "United States ➔ DAL" },
+      { count: 573, route: "United States ➔ SWA" },
+      { count: 562, route: "United States ➔ UAL" },
+      { count: 561, route: "United States ➔ AAL" },
+      { count: 289, route: "United States ➔ SKW" },
+      { count: 213, route: "Ireland ➔ RYR" },
+      { count: 175, route: "Turkey ➔ THY" },
+      { count: 159, route: "United States ➔ EJA" },
+      { count: 158, route: "United States ➔ JBU" }
+    ];
 
-    const map = L.map("map").setView([20, 0], 2);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18
-    }).addTo(map);
+    // 2. Price Trends (fake example)
+    const priceTrends = {
+      months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+      prices: [220, 230, 210, 250, 240, 260]
+    };
 
-    fetch(`${BACKEND_URL}/api/flights`)
-      .then((res) => res.json())
-      .then((data) => {
-        data.forEach(flight => {
-          if (flight.latitude && flight.longitude) {
-            L.marker([flight.latitude, flight.longitude])
-              .addTo(map)
-              .bindPopup(`${flight.callsign || "Unknown"}<br>${flight.origin_country}`);
+    // 3. Top Countries (fake example)
+    const countries = ["USA", "India", "UK", "Germany", "Canada"];
+    const countryCounts = [1000, 850, 620, 400, 390];
+
+    // 4. High-Demand Periods (fake example)
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+    const demand = [800, 950, 1120, 700, 920, 1080];
+
+    // Render Charts
+    const renderBar = (id, labels, data, label, color) => {
+      new Chart(document.getElementById(id), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: label,
+            data: data,
+            backgroundColor: color,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#fff' } },
+            y: { beginAtZero: true, ticks: { color: '#fff' } }
           }
-        });
+        }
       });
+    };
 
-    fetch(`${BACKEND_URL}/api/popular-routes`)
-      .then((res) => res.json())
-      .then((data) => {
-        const labels = data.map(d => d.route);
-        const counts = data.map(d => d.count);
-
-        new Chart(document.getElementById("countryChart"), {
-          type: "bar",
-          data: {
-            labels,
-            datasets: [{
-              label: "Popular Routes",
-              backgroundColor: "#0d6efd",
-              data: counts
-            }]
+    const renderLine = (id, labels, data, label, color) => {
+      new Chart(document.getElementById(id), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: label,
+            data: data,
+            borderColor: color,
+            fill: false,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#fff' } },
+            y: { beginAtZero: true, ticks: { color: '#fff' } }
           }
-        });
+        }
       });
+    };
 
-    fetch(`${BACKEND_URL}/api/speed-distribution`)
-      .then((res) => res.json())
-      .then((data) => {
-        const labels = data.map(d => d.range);
-        const values = data.map(d => d.count);
-
-        new Chart(document.getElementById("speedChart"), {
-          type: "line",
-          data: {
-            labels,
-            datasets: [{
-              label: "Speed Distribution",
-              backgroundColor: "#20c997",
-              borderColor: "#198754",
-              data: values,
-              fill: true
-            }]
-          }
-        });
-      });
-
-    fetch(`${BACKEND_URL}/api/price-trends`)
-      .then((res) => res.json())
-      .then((data) => {
-        const labels = data.map(d => d.route);
-        const values = data.map(d => d.price);
-
-        new Chart(document.getElementById("priceChart"), {
-          type: "bar",
-          data: {
-            labels,
-            datasets: [{
-              label: "Simulated Ticket Prices ($)",
-              backgroundColor: "#6f42c1",
-              data: values
-            }]
-          }
-        });
-      });
-
-    fetch(`${BACKEND_URL}/api/high-demand-times`)
-      .then((res) => res.json())
-      .then((data) => {
-        const labels = data.map(d => d.hour);
-        const values = data.map(d => d.count);
-
-        new Chart(document.getElementById("demandChart"), {
-          type: "line",
-          data: {
-            labels,
-            datasets: [{
-              label: "High-Demand Periods (by Hour)",
-              backgroundColor: "#0dcaf0",
-              borderColor: "#0d6efd",
-              data: values,
-              fill: true
-            }]
-          }
-        });
-      });
+    // Draw all charts
+    renderBar("popularRoutesChart", popularRoutes.map(r => r.route), popularRoutes.map(r => r.count), "Flights", "#00c3ff");
+    renderLine("priceTrendsChart", priceTrends.months, priceTrends.prices, "Average Price ($)", "#ffa500");
+    renderBar("topCountriesChart", countries, countryCounts, "Demand", "#28a745");
+    renderLine("demandPeriodsChart", months, demand, "Bookings", "#ff4444");
   </script>
 </body>
 </html>
