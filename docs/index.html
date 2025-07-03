@@ -32,87 +32,119 @@
   </div>
 
   <script>
-    // 1. Popular Routes
-    const popularRoutes = [
-      { count: 608, route: "United States ➔ " },
-      { count: 588, route: "United States ➔ DAL" },
-      { count: 573, route: "United States ➔ SWA" },
-      { count: 562, route: "United States ➔ UAL" },
-      { count: 561, route: "United States ➔ AAL" },
-      { count: 289, route: "United States ➔ SKW" },
-      { count: 213, route: "Ireland ➔ RYR" },
-      { count: 175, route: "Turkey ➔ THY" },
-      { count: 159, route: "United States ➔ EJA" },
-      { count: 158, route: "United States ➔ JBU" }
-    ];
+  const API_URL = "https://airline-backend-m39q.onrender.com/api";
 
-    // 2. Price Trends (fake example)
-    const priceTrends = {
-      months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-      prices: [220, 230, 210, 250, 240, 260]
-    };
+  async function fetchData(endpoint) {
+    const res = await fetch(`${API_URL}/${endpoint}`);
+    return res.json();
+  }
 
-    // 3. Top Countries (fake example)
-    const countries = ["USA", "India", "UK", "Germany", "Canada"];
-    const countryCounts = [1000, 850, 620, 400, 390];
-
-    // 4. High-Demand Periods (fake example)
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-    const demand = [800, 950, 1120, 700, 920, 1080];
-
-    // Render Charts
-    const renderBar = (id, labels, data, label, color) => {
-      new Chart(document.getElementById(id), {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: label,
-            data: data,
-            backgroundColor: color,
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { color: '#fff' } },
-            y: { beginAtZero: true, ticks: { color: '#fff' } }
-          }
+  const renderBar = (id, labels, data, label, color) => {
+    new Chart(document.getElementById(id), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: label,
+          data: data,
+          backgroundColor: color,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#fff' } },
+          y: { beginAtZero: true, ticks: { color: '#fff' } }
         }
-      });
-    };
+      }
+    });
+  };
 
-    const renderLine = (id, labels, data, label, color) => {
-      new Chart(document.getElementById(id), {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: label,
-            data: data,
-            borderColor: color,
-            fill: false,
-            tension: 0.4
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { color: '#fff' } },
-            y: { beginAtZero: true, ticks: { color: '#fff' } }
-          }
+  const renderLine = (id, labels, data, label, color) => {
+    new Chart(document.getElementById(id), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: label,
+          data: data,
+          borderColor: color,
+          fill: false,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#fff' } },
+          y: { beginAtZero: true, ticks: { color: '#fff' } }
         }
-      });
-    };
+      }
+    });
+  };
 
-    // Draw all charts
-    renderBar("popularRoutesChart", popularRoutes.map(r => r.route), popularRoutes.map(r => r.count), "Flights", "#00c3ff");
-    renderLine("priceTrendsChart", priceTrends.months, priceTrends.prices, "Average Price ($)", "#ffa500");
-    renderBar("topCountriesChart", countries, countryCounts, "Demand", "#28a745");
-    renderLine("demandPeriodsChart", months, demand, "Bookings", "#ff4444");
-  </script>
+  // Load all charts dynamically from backend
+  async function loadCharts() {
+    try {
+      // Popular Routes
+      const routes = await fetchData("popular-routes");
+      renderBar(
+        "popularRoutesChart",
+        routes.map(r => r.route),
+        routes.map(r => r.count),
+        "Flights",
+        "#00c3ff"
+      );
+
+      // Price Trends
+      const prices = await fetchData("price-trends");
+      renderLine(
+        "priceTrendsChart",
+        prices.map(p => p.route),
+        prices.map(p => p.price),
+        "Average Price ($)",
+        "#ffa500"
+      );
+
+      // Top Countries
+      const flights = await fetchData("flights");
+      const countryMap = {};
+      flights.forEach(f => {
+        const c = f.origin_country;
+        countryMap[c] = (countryMap[c] || 0) + 1;
+      });
+      const sortedCountries = Object.entries(countryMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+      renderBar(
+        "topCountriesChart",
+        sortedCountries.map(([c]) => c),
+        sortedCountries.map(([_, count]) => count),
+        "Demand",
+        "#28a745"
+      );
+
+      // High-Demand Periods
+      const periods = await fetchData("high-demand-times");
+      renderLine(
+        "demandPeriodsChart",
+        periods.map(p => `${p.hour}:00`),
+        periods.map(p => p.count),
+        "Bookings",
+        "#ff4444"
+      );
+
+    } catch (err) {
+      console.error("❌ Error loading charts:", err);
+    }
+  }
+
+  // Start the dashboard
+  loadCharts();
+</script>
+
 </body>
 </html>
